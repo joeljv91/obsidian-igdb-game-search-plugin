@@ -3,7 +3,14 @@
 import type { Nullable } from '../main';
 import { requestUrl } from 'obsidian';
 import { extract } from 'fuzzball';
-import { SteamResponse, OwnedSteamGames, SteamGame, SteamWishlistedGame } from '@models/steam_game.model';
+import {
+  SteamResponse,
+  OwnedSteamGames,
+  SteamGame,
+  SteamWishlistedGame,
+  SteamAchievementInfo,
+  SteamUserAchievement,
+} from '@models/steam_game.model';
 
 export class SteamAPI {
   constructor(private readonly key: string, private readonly steamId: string) {}
@@ -89,6 +96,7 @@ export class SteamAPI {
       });
 
       const games = res?.json?.response?.games;
+
       if (games) {
         const ret: { [key: string]: { playtime_forever: Nullable<number>; playtime_2weeks: Nullable<number> } } = {};
         for (const game of games) {
@@ -103,6 +111,44 @@ export class SteamAPI {
       return undefined;
     } catch (error) {
       console.warn('[Game Search][Steam API][getWishlist]' + error);
+      throw error;
+    }
+  }
+
+  async getPlayerAchievmentsForGame(gameId: string): Promise<SteamAchievementInfo[]> {
+    try {
+      const userAchievementsUrl = new URL('http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/');
+      userAchievementsUrl.searchParams.append('key', this.key);
+      userAchievementsUrl.searchParams.append('format', 'json');
+      userAchievementsUrl.searchParams.append('steamid', this.steamId);
+      userAchievementsUrl.searchParams.append('appid', gameId);
+
+      const achievementDataUrl = new URL('https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2');
+      achievementDataUrl.searchParams.append('key', this.key);
+      achievementDataUrl.searchParams.append('format', 'json');
+      achievementDataUrl.searchParams.append('steamid', this.steamId);
+      achievementDataUrl.searchParams.append('appid', gameId);
+
+      // this has readable content we'll need to match
+      const gameResult = await requestUrl({ url: achievementDataUrl.href, method: 'GET' });
+      // this has the user achievement data but nothing readable
+      const userResult = await requestUrl({ url: userAchievementsUrl.href, method: 'GET' });
+
+      const matches: SteamAchievementInfo[] = [];
+
+      if ((userResult?.json?.playerstats?.achievements?.length ?? 0) > 0) {
+        userResult?.json?.playerstats?.achievements
+          .filter(a => a.achieved)
+          .forEach(async (a: SteamUserAchievement) => {
+            const match = gameResult.json.game.availableGameStats.achievements.first(gs => gs.name === a.name);
+            if (match) {
+              matches.push(match);
+            }
+          });
+      }
+      return matches;
+    } catch (error) {
+      console.warn('[Game Search][Steam API][getPlayerAchievementsForGame]' + error);
       throw error;
     }
   }

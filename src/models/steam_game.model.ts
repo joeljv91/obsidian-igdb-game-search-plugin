@@ -43,10 +43,45 @@ export interface SteamWishlistedGame {
   win: number;
 }
 
-interface SteamWishlistedGameSub {
+export interface SteamWishlistedGameSub {
   packageid: number;
   bundleid?: number;
   discount_block: string;
   discount_pct?: string;
   price: string;
+}
+
+export interface SteamUserAchievement {
+  name: string;
+  achieved: number;
+}
+
+export interface SteamAchievementInfo {
+  name: string;
+  defaultvalue: number;
+  displayName: string;
+  hidden: number;
+  description: string;
+  icon: string;
+  icongray: string;
+}
+
+export interface SteamGameStats {
+  achievements: SteamAchievementInfo[];
+}
+
+export interface SteamAchievementDataResponse {
+  game: {
+    gameName: string;
+    gameVersion: string;
+    availableGameStats: SteamGameStats;
+  };
+}
+
+export interface SteamUserStateForGameResponse {
+  playerstats: {
+    steamID: string;
+    gameName: string;
+    achievements: SteamUserAchievement[];
+  };
 }

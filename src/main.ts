@@ -24,7 +24,7 @@ import {
   useTemplaterPluginInFile,
   executeInlineScriptsTemplates,
 } from '@utils/template';
-import { syncSteamWishlist, syncOwnedSteamGames, syncPlaytimes } from '@utils/steamSync';
+import { syncAchievements, syncSteamWishlist, syncOwnedSteamGames, syncPlaytimes } from '@utils/steamSync';
 
 export type Nullable<T> = T | undefined | null;
 
@@ -76,6 +76,12 @@ export default class GameSearchPlugin extends Plugin {
       id: 'sync steam playtime',
       name: 'Sync Steam Playtime',
       callback: () => this.syncSteamPlaytime(true),
+    });
+
+    this.addCommand({
+      id: 'sync steam achievements',
+      name: 'Sync Steam Achievements',
+      callback: () => this.syncSteamAchievements(true),
     });
 
     // This adds a settings tab so the user can configure various aspects of the plugin
@@ -237,6 +243,23 @@ export default class GameSearchPlugin extends Plugin {
         }
       });
     }).open();
+  }
+
+  async syncSteamAchievements(alertUninitializedApi: boolean): Promise<void> {
+    // always check to see if steamApi needs to be initialized on sync,
+    // it's possible the user has entered API credentials at any point in time.
+    if (this.steamApi === undefined && this.settings.steamApiKey && this.settings.steamUserId) {
+      console.info('[Game Search][Steam Sync]: initializing steam api');
+      this.steamApi = new SteamAPI(this.settings.steamApiKey, this.settings.steamUserId);
+    }
+    if (this.steamApi !== undefined) {
+      new Notice('syncing steam achievements');
+      await syncAchievements(this.app.vault, this.app.fileManager, this.steamApi, this.settings);
+      new Notice('steam achievements sync complete');
+    } else if (alertUninitializedApi) {
+      console.warn('[Game Search][SteamSync]: steam api not initialized');
+      this.showNotice('Steam Api not initialized. Did you enter your steam API key and user Id in plugin settings?');
+    }
   }
 
   async syncSteamPlaytime(alertUninitializedApi: boolean): Promise<void> {
