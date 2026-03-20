@@ -13,10 +13,10 @@ import { GameSearchModal } from '@views/game_search_modal';
 import { GameSuggestModal } from '@views/game_suggest_modal';
 import { ConfirmRegenModal } from '@views/confirm_regen_modal';
 import { CursorJumper } from '@utils/cursor_jumper';
-import { RAWGGame, RAWGGameFromSearch } from '@models/rawg_game.model';
+import { IGDBGame, IGDBGameFromSearch } from '@models/igdb_game.model';
 import { GameSearchSettingTab, GameSearchPluginSettings, DEFAULT_SETTINGS } from '@settings/settings';
 import { replaceVariableSyntax, makeFileName, stringToMap, mapToString } from '@utils/utils';
-import { RAWGAPI } from '@src/apis/rawg_games_api';
+import { IGDBAPI } from '@src/apis/igdb_games_api';
 import { SteamAPI } from '@src/apis/steam_api';
 import {
   getTemplateContents,
@@ -30,7 +30,7 @@ export type Nullable<T> = T | undefined | null;
 
 export default class GameSearchPlugin extends Plugin {
   settings: GameSearchPluginSettings;
-  rawgApi: RAWGAPI;
+  igdbApi: IGDBAPI;
   steamApi: Nullable<SteamAPI>;
 
   async onload() {
@@ -38,7 +38,7 @@ export default class GameSearchPlugin extends Plugin {
       `[Game Search][Info] version ${this.manifest.version} (requires obsidian ${this.manifest.minAppVersion})`,
     );
     await this.loadSettings();
-    this.rawgApi = new RAWGAPI(this.settings.rawgApiKey);
+    this.igdbApi = new IGDBAPI(this.settings.igdbClientId, this.settings.igdbClientSecret);
 
     if (this.settings.syncSteamOnStart) {
       this.syncSteam(false);
@@ -97,12 +97,12 @@ export default class GameSearchPlugin extends Plugin {
   }
 
   // open modal for game search
-  async searchGameMetadata(query?: string): Promise<RAWGGame> {
+  async searchGameMetadata(query?: string): Promise<IGDBGame> {
     const searchedGames = await this.openGameSearchModal(query);
     return await this.openGameSuggestModal(searchedGames);
   }
 
-  async getRenderedContents(game: RAWGGame) {
+  async getRenderedContents(game: IGDBGame) {
     const { templateFile } = this.settings;
 
     const templateContents = await getTemplateContents(this.app, templateFile);
@@ -151,12 +151,14 @@ export default class GameSearchPlugin extends Plugin {
             const q: Nullable<string> =
               noteMetadata.id ?? noteMetadata.Id ?? noteMetadata.slug ?? noteMetadata.Slug ?? null;
 
-            let game: Nullable<RAWGGame> = null;
+            let game: Nullable<IGDBGame> = null;
             if (q) {
-              game = await this.rawgApi.getBySlugOrId(q);
+              game = await this.igdbApi.getBySlugOrId(q);
             } else {
-              const games = await this.rawgApi.getByQuery(noteMetadata.name ?? noteMetadata.name ?? file.name);
-              game = await this.rawgApi.getBySlugOrId(games[0].slug);
+              const games = await this.igdbApi.getByQuery(noteMetadata.name ?? noteMetadata.Name ?? file.name);
+              if (games.length) {
+                game = await this.igdbApi.getBySlugOrId(games[0].slug ?? games[0].id);
+              }
             }
 
             if (game) {
@@ -295,7 +297,7 @@ export default class GameSearchPlugin extends Plugin {
         this.app.vault,
         this.settings,
         this.app.fileManager,
-        this.rawgApi,
+        this.igdbApi,
         this.steamApi,
         async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
         (percent: number) => progress.setValue((percent * 100) / 2),
@@ -307,7 +309,7 @@ export default class GameSearchPlugin extends Plugin {
         this.app.vault,
         this.settings,
         this.app.fileManager,
-        this.rawgApi,
+        this.igdbApi,
         this.steamApi,
         async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
         (percent: number) => progress.setValue(50 + (percent * 100) / 2),
@@ -330,7 +332,7 @@ export default class GameSearchPlugin extends Plugin {
 
   async createNewGameNote(
     params: Nullable<{
-      game: Nullable<RAWGGame>;
+      game: Nullable<IGDBGame>;
       steamId: Nullable<number>;
       steamPlaytimeForever: number;
       steamPlaytime2Weeks: number;
@@ -409,17 +411,17 @@ export default class GameSearchPlugin extends Plugin {
     }
   }
 
-  async openGameSearchModal(query = ''): Promise<RAWGGameFromSearch[]> {
+  async openGameSearchModal(query = ''): Promise<IGDBGameFromSearch[]> {
     return new Promise((resolve, reject) => {
-      return new GameSearchModal(this, this.rawgApi, query, (error, results) => {
+      return new GameSearchModal(this, this.igdbApi, query, (error, results) => {
         return error ? reject(error) : resolve(results);
       }).open();
     });
   }
 
-  async openGameSuggestModal(games: RAWGGameFromSearch[]): Promise<RAWGGame> {
+  async openGameSuggestModal(games: IGDBGameFromSearch[]): Promise<IGDBGame> {
     return new Promise((resolve, reject) => {
-      return new GameSuggestModal(this.app, this.rawgApi, games, (error, selectedGame) => {
+      return new GameSuggestModal(this.app, this.igdbApi, games, (error, selectedGame) => {
         return error ? reject(error) : resolve(selectedGame);
       }).open();
     });
@@ -432,7 +434,7 @@ export default class GameSearchPlugin extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
 
-    // Re-initialize the API, in case the API key was changed
-    this.rawgApi = new RAWGAPI(this.settings.rawgApiKey);
+    // Re-initialize the API, in case credentials were changed
+    this.igdbApi = new IGDBAPI(this.settings.igdbClientId, this.settings.igdbClientSecret);
   }
 }

@@ -1,33 +1,33 @@
 import { App, SuggestModal } from 'obsidian';
-import { RAWGAPI } from '@src/apis/rawg_games_api';
-import { RAWGGame, RAWGGameFromSearch, releaseYearForRAWGGame } from '@models/rawg_game.model';
+import { IGDBAPI } from '@src/apis/igdb_games_api';
+import { IGDBGame, IGDBGameFromSearch, releaseYearForIGDBGame } from '@models/igdb_game.model';
 
-export class GameSuggestModal extends SuggestModal<RAWGGameFromSearch> {
+export class GameSuggestModal extends SuggestModal<IGDBGameFromSearch> {
   constructor(
     app: App,
-    private api: RAWGAPI,
-    private readonly suggestion: RAWGGameFromSearch[],
-    private onChoose: (error: Error | null, result?: RAWGGame) => void,
+    private api: IGDBAPI,
+    private readonly suggestion: IGDBGameFromSearch[],
+    private onChoose: (error: Error | null, result?: IGDBGame) => void,
   ) {
     super(app);
   }
 
   // Returns all available suggestions.
-  getSuggestions(_query: string): RAWGGameFromSearch[] {
+  getSuggestions(_query: string): IGDBGameFromSearch[] {
     return this.suggestion;
   }
 
   // Renders each suggestion item.
-  renderSuggestion(game: RAWGGameFromSearch, el: HTMLElement) {
+  renderSuggestion(game: IGDBGameFromSearch, el: HTMLElement) {
     const title = game.name;
-    const publishDate = game.released ? `(${releaseYearForRAWGGame(game)})` : '';
+    const publishDate = game.first_release_date ? `(${releaseYearForIGDBGame(game)})` : '';
     el.createEl('div', { text: title });
     el.createEl('small', { text: publishDate });
   }
 
   // Perform action on the selected suggestion.
-  async onChooseSuggestion(game: RAWGGameFromSearch) {
-    const g = await this.api.getBySlugOrId(game.slug);
+  async onChooseSuggestion(game: IGDBGameFromSearch) {
+    const g = await this.api.getBySlugOrId(game.slug ?? game.id);
     this.onChoose(null, g);
   }
 }

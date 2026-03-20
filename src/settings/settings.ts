@@ -4,6 +4,7 @@ import GameSearchPlugin, { Nullable } from '../main';
 import { FileNameFormatSuggest } from './suggesters/FileNameFormatSuggester';
 import { FolderSuggest } from './suggesters/FolderSuggester';
 import { FileSuggest } from './suggesters/FileSuggester';
+import { IGDBAPI } from '@src/apis/igdb_games_api';
 
 const docUrl = 'https://github.com/CMorooney/obsidian-game-search-plugin';
 
@@ -11,7 +12,8 @@ export interface GameSearchPluginSettings {
   folder: string; // new file location
   fileNameFormat: string; // new file name format
   templateFile: string;
-  rawgApiKey: string;
+  igdbClientId: string;
+  igdbClientSecret: string;
   steamApiKey: Nullable<string>;
   steamUserId: Nullable<string>;
   syncSteamOnStart: boolean;
@@ -25,7 +27,8 @@ export const DEFAULT_SETTINGS: GameSearchPluginSettings = {
   folder: '',
   fileNameFormat: '',
   templateFile: '',
-  rawgApiKey: '',
+  igdbClientId: '',
+  igdbClientSecret: '',
   steamApiKey: null,
   steamUserId: null,
   syncSteamOnStart: false,
@@ -53,15 +56,48 @@ export class GameSearchSettingTab extends PluginSettingTab {
 
     createHeader(containerEl, 'General Settings');
 
-    // RAWG Api Key
-    new Setting(containerEl).setName('RAWG Api Key').addTextArea(textArea => {
-      const prevValue = this.plugin.settings.rawgApiKey;
-      textArea.setValue(prevValue).onChange(async value => {
-        const newValue = value;
-        this.plugin.settings.rawgApiKey = newValue;
-        await this.plugin.saveSettings();
+    // IGDB Client ID
+    new Setting(containerEl)
+      .setName('IGDB Client ID')
+      .setDesc('Twitch Developer application Client ID. See https://api-docs.igdb.com/#about')
+      .addTextArea(textArea => {
+        textArea.setValue(this.plugin.settings.igdbClientId).onChange(async value => {
+          this.plugin.settings.igdbClientId = value;
+          await this.plugin.saveSettings();
+        });
       });
-    });
+
+    // IGDB Client Secret
+    new Setting(containerEl)
+      .setName('IGDB Client Secret')
+      .setDesc('Twitch Developer application Client Secret.')
+      .addTextArea(textArea => {
+        textArea.setValue(this.plugin.settings.igdbClientSecret).onChange(async value => {
+          this.plugin.settings.igdbClientSecret = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    // Test IGDB connection
+    new Setting(containerEl)
+      .setName('Test IGDB Connection')
+      .setDesc('Verify your Client ID and Secret by requesting an access token.')
+      .addButton(btn => {
+        btn.setButtonText('Test').onClick(async () => {
+          btn.setDisabled(true);
+          btn.setButtonText('Testing...');
+          try {
+            const api = new IGDBAPI(this.plugin.settings.igdbClientId, this.plugin.settings.igdbClientSecret);
+            const ok = await api.testConnection();
+            new Notice(ok ? '✅ IGDB connection successful!' : '❌ IGDB connection failed. Check your credentials.');
+          } catch (e) {
+            new Notice('❌ IGDB connection failed: ' + e?.message);
+          } finally {
+            btn.setDisabled(false);
+            btn.setButtonText('Test');
+          }
+        });
+      });
     // New file location
     new Setting(containerEl)
       .setName('New file location')

@@ -1,6 +1,6 @@
 import { ButtonComponent, Modal, Setting, TextComponent, Notice } from 'obsidian';
-import { RAWGAPI } from '@src/apis/rawg_games_api';
-import { RAWGGameFromSearch } from '@models/rawg_game.model';
+import { IGDBAPI } from '@src/apis/igdb_games_api';
+import { IGDBGameFromSearch } from '@models/igdb_game.model';
 import GameSearchPlugin from '@src/main';
 
 export class GameSearchModal extends Modal {
@@ -9,9 +9,9 @@ export class GameSearchModal extends Modal {
 
   constructor(
     plugin: GameSearchPlugin,
-    private api: RAWGAPI,
+    private api: IGDBAPI,
     private query: string,
-    private callback: (error: Error | null, result?: RAWGGameFromSearch[]) => void,
+    private callback: (error: Error | null, result?: IGDBGameFromSearch[]) => void,
   ) {
     super(plugin.app);
   }

@@ -1,4 +1,4 @@
-import { RAWGGame } from '@models/rawg_game.model';
+import { IGDBGame } from '@models/igdb_game.model';
 import { App, normalizePath, Notice, TFile } from 'obsidian';
 
 export async function getTemplateContents(app: App, templatePath: string | undefined): Promise<string> {
@@ -43,7 +43,7 @@ export function applyTemplateTransformations(rawTemplateContents: string): strin
   );
 }
 
-export function executeInlineScriptsTemplates(game: RAWGGame, text: string) {
+export function executeInlineScriptsTemplates(game: IGDBGame, text: string) {
   const commandRegex = /<%(?:=)(.+)%>/g;
   const ctor = getFunctionConstructor();
   const matchedList = [...text.matchAll(commandRegex)];
