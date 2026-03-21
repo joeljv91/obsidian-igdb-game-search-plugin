@@ -35,6 +35,8 @@
     "release-major-test": "standard-version --dry-run --release-as major",
     "release-minor": "standard-version --release-as minor",
     "release-minor-test": "standard-version --dry-run --release-as minor",
+    "release-patch": "standard-version --release-as patch",
+    "release-patch-test": "standard-version --dry-run --release-as patch",
     "prepare": "husky install",
     "deploy:pages": "gh-pages -d pages"
   },
