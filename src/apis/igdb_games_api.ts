@@ -10,7 +10,10 @@ interface TwitchTokenResponse {
   token_type: string;
 }
 
-const SEARCH_FIELDS = 'fields id,slug,name,first_release_date,cover.url;';
+const SEARCH_FIELDS = 'fields id,slug,name,first_release_date,cover.url,category,total_rating_count;';
+
+// IGDB category values that represent standalone, playable games (not DLC/bundle/etc.)
+const MAIN_GAME_CATEGORIES = '(0,8,9,10,11)'; // main_game, remake, remaster, expanded_game, port
 
 const DETAIL_FIELDS =
   'fields id,slug,name,first_release_date,' +
@@ -96,9 +99,9 @@ export class IGDBAPI {
       if (steam) {
         // Use external_games to find the IGDB game linked to a Steam entry,
         // then return just the game fields we need.
-        apicalypse = `${SEARCH_FIELDS} search "${query}"; where external_games.category = 1; limit 20;`;
+        apicalypse = `${SEARCH_FIELDS} search "${query}"; where external_games.category = 1 & category = ${MAIN_GAME_CATEGORIES}; sort total_rating_count desc; limit 40;`;
       } else {
-        apicalypse = `${SEARCH_FIELDS} search "${query}"; limit 20;`;
+        apicalypse = `${SEARCH_FIELDS} search "${query}"; where category = ${MAIN_GAME_CATEGORIES}; sort total_rating_count desc; limit 40;`;
       }
 
       const results = await this.post<IGDBGameFromSearch[]>('games', apicalypse);

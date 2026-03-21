@@ -21,6 +21,7 @@ export interface IGDBGameSearcherSettings {
   tryFindSteamGameOnCreate: boolean;
   metaDataForOwnedSteamGames: Nullable<string>;
   metaDataForWishlistedSteamGames: Nullable<string>;
+  promptOnSteamSyncFailure: boolean;
 }
 
 export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
@@ -36,6 +37,7 @@ export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
   tryFindSteamGameOnCreate: false,
   metaDataForOwnedSteamGames: null,
   metaDataForWishlistedSteamGames: null,
+  promptOnSteamSyncFailure: false,
 };
 
 export class IGDBGameSearcherSettingTab extends PluginSettingTab {
@@ -297,6 +299,23 @@ export class IGDBGameSearcherSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         });
       });
+
+    // Prompt user to manually match when auto-sync fails
+    const promptOnFailureDescription = document.createDocumentFragment();
+    promptOnFailureDescription.createDiv({
+      text: 'when automatic IGDB matching fails during Steam sync, open a search modal so you can manually find the correct game',
+    });
+    new Setting(containerEl)
+      .setName('Prompt to manually match on sync failure')
+      .setDesc(promptOnFailureDescription)
+      .addToggle(toggle => {
+        const prevValue = this.plugin.settings.promptOnSteamSyncFailure;
+        toggle.setValue(prevValue).onChange(async value => {
+          this.plugin.settings.promptOnSteamSyncFailure = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
     createHeader(containerEl, 'Advanced/Dangerous');
 
     // Regenerate files

@@ -31,6 +31,7 @@ export async function findAndSyncSteamGame(
   createNewGameNote: CreateGameFunc,
   metadata: Map<string, string>,
   logDescription: string,
+  onMatchFailed?: (name: string) => Promise<IGDBGame | null>,
 ): Promise<void> {
   // First try precise lookup by Steam App ID via IGDB external_games
   let igdbGame: Nullable<IGDBGame> = await igdbApi.getByExternalSteamId(steamId).catch(() => null);
@@ -53,6 +54,16 @@ export async function findAndSyncSteamGame(
       } catch (detailError) {
         console.warn('[IGDB Game Searcher][Steam Sync][ERROR] getting IGDB details for ' + name);
         console.warn(detailError);
+      }
+    }
+  }
+
+  if (!igdbGame) {
+    if (onMatchFailed) {
+      try {
+        igdbGame = await onMatchFailed(name);
+      } catch (e) {
+        console.warn('[IGDB Game Searcher][Steam Sync][onMatchFailed] ' + e);
       }
     }
   }
@@ -118,6 +129,7 @@ export async function syncSteamWishlist(
   steamApi: SteamAPI,
   createNewGameNote: CreateGameFunc,
   processedPercent: (percent: number) => void,
+  onMatchFailed?: (name: string) => Promise<IGDBGame | null>,
 ): Promise<void> {
   if (!steamApi) return;
   console.info('[IGDB Game Searcher][Steam Sync]: fetching wishlist from steam api');
@@ -138,6 +150,7 @@ export async function syncSteamWishlist(
       createNewGameNote,
       stringToMap(settings.metaDataForWishlistedSteamGames),
       'wishlisted steam',
+      onMatchFailed,
     );
     processedPercent(++index / amount);
   }
@@ -151,6 +164,7 @@ export async function syncOwnedSteamGames(
   steamApi: SteamAPI,
   createNewGameNote: CreateGameFunc,
   processedPercent: (percent: number) => void,
+  onMatchFailed?: (name: string) => Promise<IGDBGame | null>,
 ): Promise<void> {
   if (!steamApi) return;
   console.info('[IGDB Game Searcher][Steam Sync]: fetching owned games from steam api');
@@ -174,6 +188,7 @@ export async function syncOwnedSteamGames(
       createNewGameNote,
       stringToMap(settings.metaDataForOwnedSteamGames),
       'owned steam',
+      onMatchFailed,
     );
     processedPercent(++index / amount);
   }

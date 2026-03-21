@@ -19,19 +19,44 @@ export class GameSuggestModal extends SuggestModal<IGDBGameFromSearch> {
 
   // Renders each suggestion item.
   renderSuggestion(game: IGDBGameFromSearch, el: HTMLElement) {
-    el.addClass('igdb-game-searcher__suggest-item');
+    const container = el.createDiv({ cls: 'igdb-game-searcher__suggest-item' });
 
     const coverUrl = normalizeCoverUrl(game.cover?.url);
     if (coverUrl) {
-      const img = el.createEl('img', { cls: 'igdb-game-searcher__suggest-cover' });
+      const img = container.createEl('img', { cls: 'igdb-game-searcher__suggest-cover' });
       img.src = coverUrl;
       img.alt = game.name;
     } else {
-      el.createEl('div', { cls: 'igdb-game-searcher__suggest-cover igdb-game-searcher__suggest-cover--placeholder' });
+      container.createEl('div', {
+        cls: 'igdb-game-searcher__suggest-cover igdb-game-searcher__suggest-cover--placeholder',
+      });
     }
 
-    const info = el.createEl('div', { cls: 'igdb-game-searcher__suggest-info' });
-    info.createEl('span', { text: game.name, cls: 'igdb-game-searcher__suggest-title' });
+    const info = container.createEl('div', { cls: 'igdb-game-searcher__suggest-info' });
+    const titleRow = info.createEl('div', { cls: 'igdb-game-searcher__suggest-title-row' });
+    titleRow.createEl('span', { text: game.name, cls: 'igdb-game-searcher__suggest-title' });
+    if (game.category != null && game.category !== 0) {
+      const categoryLabel: Record<number, string> = {
+        1: 'DLC',
+        2: 'Expansion',
+        3: 'Bundle',
+        4: 'Standalone DLC',
+        5: 'Mod',
+        6: 'Episode',
+        7: 'Season',
+        8: 'Remake',
+        9: 'Remaster',
+        10: 'Expanded',
+        11: 'Port',
+        12: 'Fork',
+        13: 'Pack',
+        14: 'Update',
+      };
+      titleRow.createEl('span', {
+        text: categoryLabel[game.category] ?? 'Other',
+        cls: 'igdb-game-searcher__suggest-category',
+      });
+    }
     if (game.first_release_date) {
       info.createEl('small', { text: releaseYearForIGDBGame(game), cls: 'igdb-game-searcher__suggest-year' });
     }

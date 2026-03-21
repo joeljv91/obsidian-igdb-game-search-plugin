@@ -12,6 +12,8 @@ export interface IGDBGameFromSearch {
   name: string;
   first_release_date?: number; // Unix timestamp (seconds)
   cover?: IGDBCover;
+  category?: number; // 0=main_game, 1=dlc, 2=expansion, 3=bundle, 4=standalone_dlc, 8=remake, 9=remaster, 10=expanded, 11=port
+  total_rating_count?: number;
 }
 
 /** Full game detail shape */

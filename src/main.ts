@@ -301,6 +301,7 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         this.steamApi,
         async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
         (percent: number) => progress.setValue((percent * 100) / 2),
+        this.settings.promptOnSteamSyncFailure ? name => this.onSteamSyncMatchFailed(name) : undefined,
       );
 
       loadingNotice.setMessage('syncing steam games (wishlist)');
@@ -313,6 +314,7 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         this.steamApi,
         async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
         (percent: number) => progress.setValue(50 + (percent * 100) / 2),
+        this.settings.promptOnSteamSyncFailure ? name => this.onSteamSyncMatchFailed(name) : undefined,
       );
       loadingNotice.setMessage('steam sync complete');
     } else if (alertUninitializedApi) {
@@ -425,6 +427,17 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         return error ? reject(error) : resolve(selectedGame);
       }).open();
     });
+  }
+
+  async onSteamSyncMatchFailed(name: string): Promise<IGDBGame | null> {
+    try {
+      new Notice(`Could not auto-match "${name}" — please search manually`);
+      const results = await this.openIGDBGameSearcherSearchModal(name);
+      if (!results?.length) return null;
+      return await this.openGameSuggestModal(results);
+    } catch {
+      return null;
+    }
   }
 
   async loadSettings() {
