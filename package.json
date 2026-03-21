@@ -1,8 +1,8 @@
 {
   "name": "igdb-game-searcher",
-  "version": "0.2.14",
+  "version": "0.0.1",
   "description": "Search for games using IGDB and create notes. Optional Steam Library Sync.",
-  "homepage": "https://github.com/CMorooney/obsidian-game-search-plugin",
+  "homepage": "https://github.com/joeljv91/obsidian-game-search-plugin",
   "main": "main.js",
   "standard-version": {
     "t": ""
@@ -14,7 +14,7 @@
     "obsidian",
     "plugin"
   ],
-  "author": "Calvin forked from anpigon",
+  "author": "Joel J. forked from CMorooney",
   "license": "MIT",
   "engines": {
     "node": ">= 16",
