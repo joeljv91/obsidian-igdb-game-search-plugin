@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { replaceDateInString, stringToMap, mapToString } from '@utils/utils';
-import GameSearchPlugin, { Nullable } from '../main';
+import IGDBGameSearcherPlugin, { Nullable } from '../main';
 import { FileNameFormatSuggest } from './suggesters/FileNameFormatSuggester';
 import { FolderSuggest } from './suggesters/FolderSuggester';
 import { FileSuggest } from './suggesters/FileSuggester';
@@ -8,7 +8,7 @@ import { IGDBAPI } from '@src/apis/igdb_games_api';
 
 const docUrl = 'https://github.com/CMorooney/obsidian-game-search-plugin';
 
-export interface GameSearchPluginSettings {
+export interface IGDBGameSearcherSettings {
   folder: string; // new file location
   fileNameFormat: string; // new file name format
   templateFile: string;
@@ -23,7 +23,7 @@ export interface GameSearchPluginSettings {
   metaDataForWishlistedSteamGames: Nullable<string>;
 }
 
-export const DEFAULT_SETTINGS: GameSearchPluginSettings = {
+export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
   folder: '',
   fileNameFormat: '',
   templateFile: '',
@@ -38,8 +38,8 @@ export const DEFAULT_SETTINGS: GameSearchPluginSettings = {
   metaDataForWishlistedSteamGames: null,
 };
 
-export class GameSearchSettingTab extends PluginSettingTab {
-  constructor(app: App, private plugin: GameSearchPlugin) {
+export class IGDBGameSearcherSettingTab extends PluginSettingTab {
+  constructor(app: App, private plugin: IGDBGameSearcherPlugin) {
     super(app, plugin);
   }
 
@@ -52,7 +52,7 @@ export class GameSearchSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    containerEl.classList.add('game-search-plugin__settings');
+    containerEl.classList.add('igdb-game-searcher__settings');
 
     createHeader(containerEl, 'General Settings');
 
@@ -119,7 +119,7 @@ export class GameSearchSettingTab extends PluginSettingTab {
     // New File Name
     let newFileNameHint = replaceDateInString(this.plugin.settings.fileNameFormat) || '{{name}} - {{release}}';
     new Setting(containerEl)
-      .setClass('game-search-plugin__settings--new_file_name')
+      .setClass('igdb-game-searcher__settings--new_file_name')
       .setName('New file name')
       .setDesc('Enter the file name format.')
       .addSearch(cb => {
@@ -144,7 +144,7 @@ export class GameSearchSettingTab extends PluginSettingTab {
 
     containerEl
       .createEl('div', {
-        cls: ['setting-item-description', 'game-search-plugin__settings--new_file_name_hint'],
+        cls: ['setting-item-description', 'igdb-game-searcher__settings--new_file_name_hint'],
       })
       .append(newFileNameHintElement);
 

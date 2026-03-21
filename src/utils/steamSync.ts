@@ -1,6 +1,6 @@
 import { TFile, Notice, Vault, FileManager, normalizePath } from 'obsidian';
 import { extract } from 'fuzzball';
-import { GameSearchPluginSettings } from '@settings/settings';
+import { IGDBGameSearcherSettings } from '@settings/settings';
 import type { Nullable } from '../main';
 import { SteamAPI } from '@src/apis/steam_api';
 import { IGDBAPI } from '@src/apis/igdb_games_api';
@@ -43,7 +43,7 @@ export async function findAndSyncSteamGame(
       const results = extract(name, igdbGames, { processor: g => g.name, limit: 1, cutoff: 80, returnObjects: true });
       igdbGameFromSearch = results?.[0]?.choice;
     } catch (igdbApiError) {
-      console.warn('[Game Search][Steam Sync][ERROR] getting IGDB game for ' + logDescription + ' game ' + name);
+      console.warn('[IGDB Game Searcher][Steam Sync][ERROR] getting IGDB game for ' + logDescription + ' game ' + name);
       console.warn(igdbApiError);
     }
 
@@ -51,7 +51,7 @@ export async function findAndSyncSteamGame(
       try {
         igdbGame = await igdbApi.getBySlugOrId(igdbGameFromSearch.slug ?? igdbGameFromSearch.id);
       } catch (detailError) {
-        console.warn('[Game Search][Steam Sync][ERROR] getting IGDB details for ' + name);
+        console.warn('[IGDB Game Searcher][Steam Sync][ERROR] getting IGDB details for ' + name);
         console.warn(detailError);
       }
     }
@@ -59,7 +59,7 @@ export async function findAndSyncSteamGame(
 
   if (!igdbGame) {
     new Notice('Unable to sync ' + logDescription + ' game ' + name);
-    console.warn('[Game Search][Steam Sync] SKIPPING! ' + name);
+    console.warn('[IGDB Game Searcher][Steam Sync] SKIPPING! ' + name);
     return;
   }
 
@@ -70,7 +70,7 @@ export async function findAndSyncSteamGame(
 
   if (existingGameFile) {
     console.info(
-      '[Game Search][Steam Sync]: found match for vault file: ' +
+      '[IGDB Game Searcher][Steam Sync]: found match for vault file: ' +
         existingGameFile.name +
         ' and ' +
         logDescription +
@@ -90,7 +90,7 @@ export async function findAndSyncSteamGame(
       return data;
     });
   } else {
-    console.info('[Game Search][Steam Sync] creating note for ' + name);
+    console.info('[IGDB Game Searcher][Steam Sync] creating note for ' + name);
     try {
       await createNewGameNote(
         {
@@ -104,7 +104,7 @@ export async function findAndSyncSteamGame(
         metadata,
       );
     } catch (writeError) {
-      console.warn('[Game Search][Steam Sync][ERROR] writing file for steam game ' + name);
+      console.warn('[IGDB Game Searcher][Steam Sync][ERROR] writing file for steam game ' + name);
       console.warn(writeError);
     }
   }
@@ -120,7 +120,7 @@ export async function syncSteamWishlist(
   processedPercent: (percent: number) => void,
 ): Promise<void> {
   if (!steamApi) return;
-  console.info('[Game Search][Steam Sync]: fetching wishlist from steam api');
+  console.info('[IGDB Game Searcher][Steam Sync]: fetching wishlist from steam api');
   const wishlistGames = await steamApi.getWishlist();
   let index = 0;
   const amount = wishlistGames.size;
@@ -145,7 +145,7 @@ export async function syncSteamWishlist(
 
 export async function syncOwnedSteamGames(
   vault: Vault,
-  settings: GameSearchPluginSettings,
+  settings: IGDBGameSearcherSettings,
   fileManager: FileManager,
   igdbApi: IGDBAPI,
   steamApi: SteamAPI,
@@ -153,10 +153,10 @@ export async function syncOwnedSteamGames(
   processedPercent: (percent: number) => void,
 ): Promise<void> {
   if (!steamApi) return;
-  console.info('[Game Search][Steam Sync]: fetching owned games from steam api');
+  console.info('[IGDB Game Searcher][Steam Sync]: fetching owned games from steam api');
   const ownedSteamGames = await steamApi.getOwnedGames();
 
-  console.info('[Game Search][Steam Sync]: begin steam game directory iteration');
+  console.info('[IGDB Game Searcher][Steam Sync]: begin steam game directory iteration');
   let index = 0;
   const amount = ownedSteamGames.length;
 

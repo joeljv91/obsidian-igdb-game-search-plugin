@@ -1,4 +1,4 @@
-# Obsidian Game Search Plugin
+# IGDB Game Searcher
 
 - [How to Install](#how-to-install)
 - [Basic Usage](#basic-usage)
@@ -15,7 +15,7 @@ Search for games by title and automatically create notes with metadata fetched f
 
 ## How to Install
 
-Search **Game Search** in the Obsidian Community plugin directory and install from there.
+Search **IGDB Game Searcher** in the Obsidian Community plugin directory and install from there.
 
 Or use this direct install link: [Install Link](https://github.com/CMorooney/obsidian-game-search-plugin)
 

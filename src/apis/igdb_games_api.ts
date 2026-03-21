@@ -64,7 +64,7 @@ export class IGDBAPI {
       this.tokenExpiresAt = Date.now() + body.expires_in * 1000;
       return this.accessToken;
     } catch (error) {
-      console.warn('[Game Search][IGDB API][Auth] ' + error);
+      console.warn('[IGDB Game Searcher][IGDB API][Auth] ' + error);
       throw error;
     }
   }
@@ -104,7 +104,7 @@ export class IGDBAPI {
       const results = await this.post<IGDBGameFromSearch[]>('games', apicalypse);
       return results ?? [];
     } catch (error) {
-      console.warn('[Game Search][IGDB API][getByQuery] ' + error);
+      console.warn('[IGDB Game Searcher][IGDB API][getByQuery] ' + error);
       throw error;
     }
   }
@@ -125,7 +125,7 @@ export class IGDBAPI {
 
       return results[0];
     } catch (error) {
-      console.warn('[Game Search][IGDB API][getBySlugOrId] ' + error);
+      console.warn('[IGDB Game Searcher][IGDB API][getBySlugOrId] ' + error);
       throw error;
     }
   }
@@ -146,7 +146,7 @@ export class IGDBAPI {
 
       return await this.getBySlugOrId(extResults[0].game);
     } catch (error) {
-      console.warn('[Game Search][IGDB API][getByExternalSteamId] ' + error);
+      console.warn('[IGDB Game Searcher][IGDB API][getByExternalSteamId] ' + error);
       return null;
     }
   }

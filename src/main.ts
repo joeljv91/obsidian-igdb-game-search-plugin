@@ -9,12 +9,12 @@ import {
   Vault,
   normalizePath,
 } from 'obsidian';
-import { GameSearchModal } from '@views/game_search_modal';
+import { IGDBGameSearcherSearchModal } from '@views/game_search_modal';
 import { GameSuggestModal } from '@views/game_suggest_modal';
 import { ConfirmRegenModal } from '@views/confirm_regen_modal';
 import { CursorJumper } from '@utils/cursor_jumper';
 import { IGDBGame, IGDBGameFromSearch } from '@models/igdb_game.model';
-import { GameSearchSettingTab, GameSearchPluginSettings, DEFAULT_SETTINGS } from '@settings/settings';
+import { IGDBGameSearcherSettingTab, IGDBGameSearcherSettings, DEFAULT_SETTINGS } from '@settings/settings';
 import { replaceVariableSyntax, makeFileName, stringToMap, mapToString } from '@utils/utils';
 import { IGDBAPI } from '@src/apis/igdb_games_api';
 import { SteamAPI } from '@src/apis/steam_api';
@@ -28,14 +28,14 @@ import { syncAchievements, syncSteamWishlist, syncOwnedSteamGames, syncPlaytimes
 
 export type Nullable<T> = T | undefined | null;
 
-export default class GameSearchPlugin extends Plugin {
-  settings: GameSearchPluginSettings;
+export default class IGDBGameSearcherPlugin extends Plugin {
+  settings: IGDBGameSearcherSettings;
   igdbApi: IGDBAPI;
   steamApi: Nullable<SteamAPI>;
 
   async onload() {
     console.info(
-      `[Game Search][Info] version ${this.manifest.version} (requires obsidian ${this.manifest.minAppVersion})`,
+      `[IGDB Game Searcher][Info] version ${this.manifest.version} (requires obsidian ${this.manifest.minAppVersion})`,
     );
     await this.loadSettings();
     this.igdbApi = new IGDBAPI(this.settings.igdbClientId, this.settings.igdbClientSecret);
@@ -51,7 +51,7 @@ export default class GameSearchPlugin extends Plugin {
     // This creates an icon in the left ribbon.
     const ribbonIconEl = this.addRibbonIcon('gamepad-2', 'Create new game note', () => this.createNewGameNote(null)); // passing null/undefined for params here will force user to game search
     // Perform additional things with the ribbon
-    ribbonIconEl.addClass('obsidian-game-search-plugin-ribbon-class');
+    ribbonIconEl.addClass('igdb-game-searcher-ribbon-class');
 
     // This adds a simple command that can be triggered anywhere
     this.addCommand({
@@ -85,7 +85,7 @@ export default class GameSearchPlugin extends Plugin {
     });
 
     // This adds a settings tab so the user can configure various aspects of the plugin
-    this.addSettingTab(new GameSearchSettingTab(this.app, this));
+    this.addSettingTab(new IGDBGameSearcherSettingTab(this.app, this));
   }
 
   showNotice(message: unknown) {
@@ -98,7 +98,7 @@ export default class GameSearchPlugin extends Plugin {
 
   // open modal for game search
   async searchGameMetadata(query?: string): Promise<IGDBGame> {
-    const searchedGames = await this.openGameSearchModal(query);
+    const searchedGames = await this.openIGDBGameSearcherSearchModal(query);
     return await this.openGameSuggestModal(searchedGames);
   }
 
@@ -114,21 +114,21 @@ export default class GameSearchPlugin extends Plugin {
     try {
       const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
       if (!markdownView) {
-        console.warn('[Game Search][Insert Metadata] Can not find an active markdown view');
+        console.warn('[IGDB Game Searcher][Insert Metadata] Can not find an active markdown view');
         return;
       }
 
       const game = await this.searchGameMetadata(markdownView.file.basename);
 
       if (!markdownView.editor) {
-        console.warn('[Game Search][Insert Metadata] Can not find editor from the active markdown view');
+        console.warn('[IGDB Game Searcher][Insert Metadata] Can not find editor from the active markdown view');
         return;
       }
 
       const renderedContents = await this.getRenderedContents(game);
       markdownView.editor.replaceRange(renderedContents, { line: 0, ch: 0 });
     } catch (err) {
-      console.warn('[Game Search][Insert Metadata][unexepected] ' + err);
+      console.warn('[IGDB Game Searcher][Insert Metadata][unexepected] ' + err);
       this.showNotice(err);
     }
   }
@@ -240,7 +240,7 @@ export default class GameSearchPlugin extends Plugin {
               }
             }
           } catch (error) {
-            console.error('[GameSearch][Regen] unexpected error regenerating file ' + file.name);
+            console.error('[IGDB Game Searcher][Regen] unexpected error regenerating file ' + file.name);
           }
         }
       });
@@ -251,7 +251,7 @@ export default class GameSearchPlugin extends Plugin {
     // always check to see if steamApi needs to be initialized on sync,
     // it's possible the user has entered API credentials at any point in time.
     if (this.steamApi === undefined && this.settings.steamApiKey && this.settings.steamUserId) {
-      console.info('[Game Search][Steam Sync]: initializing steam api');
+      console.info('[IGDB Game Searcher][Steam Sync]: initializing steam api');
       this.steamApi = new SteamAPI(this.settings.steamApiKey, this.settings.steamUserId);
     }
     if (this.steamApi !== undefined) {
@@ -259,7 +259,7 @@ export default class GameSearchPlugin extends Plugin {
       await syncAchievements(this.app.vault, this.app.fileManager, this.steamApi, this.settings);
       new Notice('steam achievements sync complete');
     } else if (alertUninitializedApi) {
-      console.warn('[Game Search][SteamSync]: steam api not initialized');
+      console.warn('[IGDB Game Searcher][SteamSync]: steam api not initialized');
       this.showNotice('Steam Api not initialized. Did you enter your steam API key and user Id in plugin settings?');
     }
   }
@@ -268,7 +268,7 @@ export default class GameSearchPlugin extends Plugin {
     // always check to see if steamApi needs to be initialized on sync,
     // it's possible the user has entered API credentials at any point in time.
     if (this.steamApi === undefined && this.settings.steamApiKey && this.settings.steamUserId) {
-      console.info('[Game Search][Steam Sync]: initializing steam api');
+      console.info('[IGDB Game Searcher][Steam Sync]: initializing steam api');
       this.steamApi = new SteamAPI(this.settings.steamApiKey, this.settings.steamUserId);
     }
 
@@ -277,7 +277,7 @@ export default class GameSearchPlugin extends Plugin {
       await syncPlaytimes(this.app.vault, this.app.fileManager, this.steamApi, this.settings);
       new Notice('steam playtime sync complete');
     } else if (alertUninitializedApi) {
-      console.warn('[Game Search][SteamSync]: steam api not initialized');
+      console.warn('[IGDB Game Searcher][SteamSync]: steam api not initialized');
       this.showNotice('Steam Api not initialized. Did you enter your steam API key and user Id in plugin settings?');
     }
   }
@@ -286,7 +286,7 @@ export default class GameSearchPlugin extends Plugin {
     // always check to see if steamApi needs to be initialized on sync,
     // it's possible the user has entered API credentials at any point in time.
     if (this.steamApi === undefined && this.settings.steamApiKey && this.settings.steamUserId) {
-      console.info('[Game Search][Steam Sync]: initializing steam api');
+      console.info('[IGDB Game Searcher][Steam Sync]: initializing steam api');
       this.steamApi = new SteamAPI(this.settings.steamApiKey, this.settings.steamUserId);
     }
 
@@ -316,7 +316,7 @@ export default class GameSearchPlugin extends Plugin {
       );
       loadingNotice.setMessage('steam sync complete');
     } else if (alertUninitializedApi) {
-      console.warn('[Game Search][SteamSync]: steam api not initialized');
+      console.warn('[IGDB Game Searcher][SteamSync]: steam api not initialized');
       this.showNotice('Steam Api not initialized. Did you enter your steam API key and user Id in plugin settings?');
     }
   }
@@ -367,7 +367,7 @@ export default class GameSearchPlugin extends Plugin {
       // open file
       const activeLeaf = this.app.workspace.getLeaf();
       if (!activeLeaf) {
-        console.warn('[Game Search][Create Game Note] No active leaf');
+        console.warn('[IGDB Game Searcher][Create Game Note] No active leaf');
         return;
       }
 
@@ -404,16 +404,16 @@ export default class GameSearchPlugin extends Plugin {
         await new CursorJumper(this.app).jumpToNextCursorLocation();
       }
     } catch (err) {
-      console.warn('[Game Search][Create Game Note][unexpected] ' + err);
+      console.warn('[IGDB Game Searcher][Create Game Note][unexpected] ' + err);
       if (!err.message.toLowerCase().contains('already exists')) {
         this.showNotice(err);
       }
     }
   }
 
-  async openGameSearchModal(query = ''): Promise<IGDBGameFromSearch[]> {
+  async openIGDBGameSearcherSearchModal(query = ''): Promise<IGDBGameFromSearch[]> {
     return new Promise((resolve, reject) => {
-      return new GameSearchModal(this, this.igdbApi, query, (error, results) => {
+      return new IGDBGameSearcherSearchModal(this, this.igdbApi, query, (error, results) => {
         return error ? reject(error) : resolve(results);
       }).open();
     });
