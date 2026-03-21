@@ -28,7 +28,7 @@ export class SteamAPI {
 
   async getOwnedGames(): Promise<SteamGame[]> {
     try {
-      const apiURL = new URL('http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/');
+      const apiURL = new URL('https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/');
       apiURL.searchParams.append('key', this.key);
       apiURL.searchParams.append('steamid', this.steamId);
       apiURL.searchParams.append('include_appinfo', 'true');
@@ -74,7 +74,7 @@ export class SteamAPI {
     gameIds: string[],
   ): Promise<{ [key: string]: { playtime_forever: Nullable<number>; playtime_2weeks: Nullable<number> } } | undefined> {
     try {
-      const apiURL = new URL('http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/');
+      const apiURL = new URL('https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/');
       apiURL.searchParams.append('key', this.key);
       apiURL.searchParams.append('format', 'json');
 
@@ -117,7 +117,7 @@ export class SteamAPI {
 
   async getPlayerAchievmentsForGame(gameId: string): Promise<SteamAchievementInfo[]> {
     try {
-      const userAchievementsUrl = new URL('http://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/');
+      const userAchievementsUrl = new URL('https://api.steampowered.com/ISteamUserStats/GetUserStatsForGame/v0002/');
       userAchievementsUrl.searchParams.append('key', this.key);
       userAchievementsUrl.searchParams.append('format', 'json');
       userAchievementsUrl.searchParams.append('steamid', this.steamId);
