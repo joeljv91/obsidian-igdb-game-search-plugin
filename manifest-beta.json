@@ -1,10 +1,10 @@
 {
-	"id": "igdb-game-searcher",
-	"name": "IGDB Game Searcher",
-	"version": "0.0.1",
-	"minAppVersion": "0.15.0",
-	"description": "Search for games using IGDB and create notes. Optional Steam Library Sync.",
-	"author": "Joel J. forked from CMorooney",
-	"authorUrl": "https://github.com/joeljv91/obsidian-game-search-plugin",
-	"isDesktopOnly": false
+  "id": "igdb-game-searcher",
+  "name": "IGDB Game Searcher",
+  "version": "0.0.2",
+  "minAppVersion": "0.15.0",
+  "description": "Search for games using IGDB and create notes. Optional Steam Library Sync.",
+  "author": "Joel J. forked from CMorooney",
+  "authorUrl": "https://github.com/joeljv91/obsidian-game-search-plugin",
+  "isDesktopOnly": false
 }
