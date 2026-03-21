@@ -1,6 +1,6 @@
 {
   "name": "igdb-game-searcher",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Search for games using IGDB and create notes. Optional Steam Library Sync.",
   "homepage": "https://github.com/joeljv91/obsidian-game-search-plugin",
   "main": "main.js",

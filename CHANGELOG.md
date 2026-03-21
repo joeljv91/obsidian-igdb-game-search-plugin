@@ -1,5 +1,15 @@
 # Changelog
 
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+### [0.0.3](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.2...0.0.3) (2026-03-21)
+
+
+### Features
+
+* add steam sync suggest on failure + fix styles ([b8bf11e](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/b8bf11e9bfcf9eaf0c3d75fe3636761d13dcc808))
+* added release patch ([0f866b9](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/0f866b90ba9f8850d1e05a462608ad6bcba9e965))
+
 ## 0.2.14
 
 Adjusts how complex and array objects from RAWG are provided to template/templater
