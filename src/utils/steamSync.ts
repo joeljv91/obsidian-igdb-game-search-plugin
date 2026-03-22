@@ -10,9 +10,9 @@ import { IGDBGame, IGDBGameFromSearch } from '@models/igdb_game.model';
 type CreateGameFunc = (
   params: {
     game: IGDBGame;
-    steamId: number;
-    steamPlaytimeForever: number;
-    steamPlaytime2Weeks: number;
+    steam_id: number;
+    steam_playtime_forever: number;
+    steam_playtime_2weeks: number;
     overwriteFile: boolean;
   },
   openAfterCreate: boolean,
@@ -91,10 +91,10 @@ export async function findAndSyncSteamGame(
         name,
     );
 
-    fileManager.processFrontMatter(existingGameFile, data => {
-      data.steamId = steamId;
-      data.steamPlaytimeForever = steamPlaytimeForever;
-      data.steamPlaytime2Weeks = steamPlaytime2Weeks;
+    await fileManager.processFrontMatter(existingGameFile, data => {
+      data.steam_id = steamId;
+      data.steam_playtime_forever = steamPlaytimeForever;
+      data.steam_playtime_2weeks = steamPlaytime2Weeks;
       if (metadata && metadata instanceof Map) {
         for (const [key, value] of metadata) {
           data[key.trim()] = value.trim();
@@ -108,9 +108,9 @@ export async function findAndSyncSteamGame(
       await createNewGameNote(
         {
           game: igdbGame,
-          steamId: steamId,
-          steamPlaytimeForever: steamPlaytimeForever,
-          steamPlaytime2Weeks: steamPlaytime2Weeks,
+          steam_id: steamId,
+          steam_playtime_forever: steamPlaytimeForever,
+          steam_playtime_2weeks: steamPlaytime2Weeks,
           overwriteFile: false,
         },
         false,
@@ -204,7 +204,6 @@ export async function syncPlaytimes(
 ): Promise<void> {
   const folderPath = normalizePath(settings.folder);
   const folder = vault.getFolderByPath(folderPath);
-  const ids: string[] = [];
 
   const doForChild = async (func: (file: TFile) => Promise<void>) => {
     for (const f of folder.children) {
@@ -215,13 +214,26 @@ export async function syncPlaytimes(
     }
   };
 
+  // Collect all steam_ids from notes first
+  const ids: string[] = [];
+  await doForChild(async file => {
+    await new Promise<void>(resolve => {
+      fileManager.processFrontMatter(file, data => {
+        if (data.steam_id) ids.push(String(data.steam_id));
+        resolve();
+        return data;
+      });
+    });
+  });
+
   const playerStats = await steamApi.getPlayerStatsForGames(ids);
   if (playerStats) {
-    doForChild(async file => {
-      fileManager.processFrontMatter(file, data => {
-        if (data.steamId && playerStats[data.steamId]) {
-          data.steamPlaytimeForever = playerStats[data.steamId].playtime_forever;
-          data.steamPlaytime2Weeks = playerStats[data.steamId].playtime_2weeks;
+    await doForChild(async file => {
+      await fileManager.processFrontMatter(file, data => {
+        const id = data.steam_id ? String(data.steam_id) : null;
+        if (id && playerStats[id]) {
+          data.steam_playtime_forever = playerStats[id].playtime_forever;
+          data.steam_playtime_2weeks = playerStats[id].playtime_2weeks;
         }
         return data;
       });
@@ -238,20 +250,39 @@ export async function syncAchievements(
   const folderPath = normalizePath(settings.folder);
   const folder = vault.getFolderByPath(folderPath);
 
-  const doForChild = async (func: (file: TFile) => Promise<void>) => {
-    for (const f of folder.children) {
-      const file = f as TFile;
-      if (!!file && file.name.includes('.md')) {
-        await func(file);
-      }
-    }
-  };
+  for (const f of folder.children) {
+    const file = f as TFile;
+    if (!file || !file.name.includes('.md')) continue;
 
-  doForChild(async file => {
-    fileManager.processFrontMatter(file, async data => {
-      if (data.steamId) {
-        await steamApi.getPlayerAchievmentsForGame(data.steamId);
-      }
+    // Read steam_id from frontmatter
+    let steamAppId: string | null = null;
+    await new Promise<void>(resolve => {
+      fileManager.processFrontMatter(file, data => {
+        if (data.steam_id) steamAppId = String(data.steam_id);
+        resolve();
+        return data;
+      });
     });
-  });
+
+    if (!steamAppId) continue;
+
+    try {
+      const result = await steamApi.getPlayerAchievmentsForGame(steamAppId);
+
+      await fileManager.processFrontMatter(file, data => {
+        data.steam_achievements_total = result.total;
+        data.steam_achievements_earned = result.items.length;
+        data.steam_achievements_percent =
+          result.total > 0 ? Math.round((result.items.length / result.total) * 1000) / 10 : 0;
+        data.steam_achievements = result.items.map(a => ({
+          name: a.display_name,
+          description: a.description,
+          unlock_time: a.unlock_time ? new Date(a.unlock_time * 1000).toISOString().split('T')[0] : null,
+        }));
+        return data;
+      });
+    } catch (e) {
+      console.warn('[IGDB Game Searcher][Steam Sync][syncAchievements] failed for appId ' + steamAppId, e);
+    }
+  }
 }

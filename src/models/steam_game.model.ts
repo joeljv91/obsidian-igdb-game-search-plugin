@@ -52,8 +52,10 @@ export interface SteamWishlistedGameSub {
 }
 
 export interface SteamUserAchievement {
+  apiname?: string;
   name: string;
   achieved: number;
+  unlocktime?: number;
 }
 
 export interface SteamAchievementInfo {

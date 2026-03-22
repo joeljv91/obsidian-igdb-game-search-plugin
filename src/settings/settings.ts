@@ -182,19 +182,27 @@ export class IGDBGameSearcherSettingTab extends PluginSettingTab {
       textArea.setValue(prevValue).onChange(async value => {
         const newValue = value;
         this.plugin.settings.steamApiKey = newValue;
+        this.plugin.steamApi = undefined;
         await this.plugin.saveSettings();
       });
     });
 
     // Steam user id
-    new Setting(containerEl).setName('Steam Id').addTextArea(textArea => {
-      const prevValue = this.plugin.settings.steamUserId;
-      textArea.setValue(prevValue).onChange(async value => {
-        const newValue = value;
-        this.plugin.settings.steamUserId = newValue;
-        await this.plugin.saveSettings();
+    new Setting(containerEl)
+      .setName('Steam Profile')
+      .setDesc(
+        'Your Steam profile URL (e.g. https://steamcommunity.com/id/retro-joe/), vanity name, or 64-bit Steam ID. The ID will be resolved automatically.',
+      )
+      .addTextArea(textArea => {
+        const prevValue = this.plugin.settings.steamUserId;
+        textArea.setValue(prevValue).onChange(async value => {
+          const newValue = value;
+          this.plugin.settings.steamUserId = newValue;
+          // Reset the cached SteamAPI instance so the new input is resolved fresh
+          this.plugin.steamApi = undefined;
+          await this.plugin.saveSettings();
+        });
       });
-    });
 
     // Owned steam game extra metadata
     const metadataForOwnedSteamGamesDescription = document.createDocumentFragment();

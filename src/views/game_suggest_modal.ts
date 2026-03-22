@@ -26,6 +26,17 @@ export class GameSuggestModal extends SuggestModal<IGDBGameFromSearch> {
       this.inputEl.value = this.initialQuery;
       this.inputEl.dispatchEvent(new Event('input'));
     }
+
+    // Skip button — lets the user dismiss without selecting (useful during Steam sync)
+    const footer = this.modalEl.createDiv({ cls: 'igdb-game-searcher__suggest-footer' });
+    const skipBtn = footer.createEl('button', {
+      text: 'Skip this game',
+      cls: 'igdb-game-searcher__suggest-skip',
+    });
+    skipBtn.addEventListener('click', () => {
+      this.close();
+      this.onChoose(new Error('skipped'));
+    });
   }
 
   // Returns filtered suggestions; also triggers async IGDB re-fetch on new queries.

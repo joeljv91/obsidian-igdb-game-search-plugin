@@ -97,3 +97,25 @@ igdb-game-searcher__settings .search-input-container {
   color: var(--text-muted);
   font-size: 0.8em;
 }
+
+.igdb-game-searcher__suggest-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.igdb-game-searcher__suggest-skip {
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.igdb-game-searcher__suggest-skip:hover {
+  color: var(--text-normal);
+  border-color: var(--text-muted);
+}

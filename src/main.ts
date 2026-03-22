@@ -191,9 +191,11 @@ export default class IGDBGameSearcherPlugin extends Plugin {
                     regeneratedMetadata.set(key, existingMetadata.get(key));
                   }
                 };
-                preservePrevious('steamId');
-                preservePrevious('steamPlaytimeForever');
-                preservePrevious('steamPlaytime2Weeks');
+                preservePrevious('steam_id');
+                preservePrevious('steam_playtime_forever');
+                preservePrevious('steam_playtime_2weeks');
+                preservePrevious('steam_achievements_earned');
+                preservePrevious('steam_achievements');
 
                 if (this.settings.metaDataForWishlistedSteamGames) {
                   const wishlistMap = stringToMap(this.settings.metaDataForWishlistedSteamGames);
@@ -316,6 +318,10 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         (percent: number) => progress.setValue(50 + (percent * 100) / 2),
         this.settings.promptOnSteamSyncFailure ? name => this.onSteamSyncMatchFailed(name) : undefined,
       );
+
+      loadingNotice.setMessage('syncing steam achievements');
+      await syncAchievements(this.app.vault, this.app.fileManager, this.steamApi, this.settings);
+
       loadingNotice.setMessage('steam sync complete');
     } else if (alertUninitializedApi) {
       console.warn('[IGDB Game Searcher][SteamSync]: steam api not initialized');
@@ -335,9 +341,9 @@ export default class IGDBGameSearcherPlugin extends Plugin {
   async createNewGameNote(
     params: Nullable<{
       game: Nullable<IGDBGame>;
-      steamId: Nullable<number>;
-      steamPlaytimeForever: number;
-      steamPlaytime2Weeks: number;
+      steam_id: Nullable<number>;
+      steam_playtime_forever: number;
+      steam_playtime_2weeks: number;
     }>,
     openAfterCreate = true,
     extraData?: Map<string, string>, // key/values for metadata to add to file
@@ -349,7 +355,7 @@ export default class IGDBGameSearcherPlugin extends Plugin {
       // and settings set to try and match new game notes to steam,
       // try and match new game to steam
       if (
-        !params?.steamId &&
+        !params?.steam_id &&
         this.settings.tryFindSteamGameOnCreate &&
         this.steamApi &&
         this.settings.steamApiKey &&
@@ -359,9 +365,9 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         if (maybeMatchedSteamGame) {
           params = {
             game: null,
-            steamId: maybeMatchedSteamGame.appid,
-            steamPlaytimeForever: maybeMatchedSteamGame.playtime_forever,
-            steamPlaytime2Weeks: maybeMatchedSteamGame.playtime_2weeks,
+            steam_id: maybeMatchedSteamGame.appid,
+            steam_playtime_forever: maybeMatchedSteamGame.playtime_forever,
+            steam_playtime_2weeks: maybeMatchedSteamGame.playtime_2weeks,
           };
         }
       }
@@ -383,11 +389,11 @@ export default class IGDBGameSearcherPlugin extends Plugin {
       // if use Templater plugin
       await useTemplaterPluginInFile(this.app, targetFile);
 
-      if (params && params.steamId) {
-        this.app.fileManager.processFrontMatter(targetFile, (data: any) => {
-          data.steamId = params.steamId;
-          data.steamPlaytimeForever = params.steamPlaytimeForever;
-          data.steamPlaytime2Weeks = params.steamPlaytime2Weeks;
+      if (params && params.steam_id) {
+        await this.app.fileManager.processFrontMatter(targetFile, (data: any) => {
+          data.steam_id = params.steam_id;
+          data.steam_playtime_forever = params.steam_playtime_forever;
+          data.steam_playtime_2weeks = params.steam_playtime_2weeks;
           if (extraData && extraData instanceof Map) {
             for (const [key, value] of extraData) {
               data[key] = value;
@@ -395,6 +401,28 @@ export default class IGDBGameSearcherPlugin extends Plugin {
           }
           return data;
         });
+
+        // Fetch achievements for this game
+        if (this.steamApi) {
+          try {
+            const result = await this.steamApi.getPlayerAchievmentsForGame(String(params.steam_id));
+            if (result.total > 0) {
+              await this.app.fileManager.processFrontMatter(targetFile, (data: any) => {
+                data.steam_achievements_total = result.total;
+                data.steam_achievements_earned = result.items.length;
+                data.steam_achievements_percent = Math.round((result.items.length / result.total) * 1000) / 10;
+                data.steam_achievements = result.items.map(a => ({
+                  name: a.display_name,
+                  description: a.description,
+                  unlock_time: a.unlock_time ? new Date(a.unlock_time * 1000).toISOString().split('T')[0] : null,
+                }));
+                return data;
+              });
+            }
+          } catch (e) {
+            console.warn('[IGDB Game Searcher][Create Game Note][achievements]' + e);
+          }
+        }
       }
 
       // open file
