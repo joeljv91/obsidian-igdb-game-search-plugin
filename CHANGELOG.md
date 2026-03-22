@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.4...0.0.5) (2026-03-22)
+
+
+### Features
+
+* fixes igdb + steam suggestions ([2c92dbc](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/2c92dbc7097e66016c1010c664cb7bbabbb6a7ea))
+
 ### [0.0.4](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.3...0.0.4) (2026-03-22)
 
 ### [0.0.3](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.2...0.0.3) (2026-03-21)
