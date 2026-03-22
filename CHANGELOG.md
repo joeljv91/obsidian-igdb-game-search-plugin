@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.6...0.0.7) (2026-03-22)
+
+
+### Features
+
+* improve readme ([4c32e8d](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/4c32e8d5f5446a41cc45b7d1619e169ec5e32c3d))
+* steam whishlist disable flag, suggest modal improvements, private profile error improvement ([4778a78](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/4778a7897743834d8ef2d791a93d8997e348f34e))
+* update manifest-beta version ([37a5a5f](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/37a5a5f46c48e849c194250d5e93f102425e2f5b))
+
 ### [0.0.6](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.5...0.0.6) (2026-03-22)
 
 
