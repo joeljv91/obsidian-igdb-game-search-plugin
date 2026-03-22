@@ -39,10 +39,17 @@ igdb-game-searcher__settings .search-input-container {
 
 .igdb-game-searcher__suggest-cover {
   flex-shrink: 0;
-  width: 36px;
-  height: 48px;
+  width: 75px;
+  height: 100px;
   object-fit: cover;
   border-radius: 3px;
+}
+
+@media (max-width: 480px) {
+  .igdb-game-searcher__suggest-cover {
+    width: 45px;
+    height: 60px;
+  }
 }
 
 .igdb-game-searcher__suggest-cover--placeholder {

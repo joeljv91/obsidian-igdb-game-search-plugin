@@ -40,9 +40,11 @@ export async function findAndSyncSteamGame(
   if (!igdbGame) {
     let igdbGameFromSearch: Nullable<IGDBGameFromSearch>;
     try {
-      const igdbGames = await igdbApi.getByQuery(name, true);
-      const results = extract(name, igdbGames, { processor: g => g.name, limit: 1, cutoff: 80, returnObjects: true });
-      igdbGameFromSearch = results?.[0]?.choice;
+      const igdbGames = await igdbApi.getByQuery(name);
+      if (igdbGames.length > 0) {
+        const results = extract(name, igdbGames, { processor: g => g.name, limit: 1, cutoff: 65, returnObjects: true });
+        igdbGameFromSearch = results?.[0]?.choice;
+      }
     } catch (igdbApiError) {
       console.warn('[IGDB Game Searcher][Steam Sync][ERROR] getting IGDB game for ' + logDescription + ' game ' + name);
       console.warn(igdbApiError);

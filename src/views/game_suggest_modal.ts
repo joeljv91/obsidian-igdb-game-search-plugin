@@ -3,18 +3,57 @@ import { IGDBAPI } from '@src/apis/igdb_games_api';
 import { IGDBGame, IGDBGameFromSearch, releaseYearForIGDBGame, normalizeCoverUrl } from '@models/igdb_game.model';
 
 export class GameSuggestModal extends SuggestModal<IGDBGameFromSearch> {
+  private items: IGDBGameFromSearch[];
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     app: App,
     private api: IGDBAPI,
     private readonly suggestion: IGDBGameFromSearch[],
     private onChoose: (error: Error | null, result?: IGDBGame) => void,
+    private readonly initialQuery?: string,
   ) {
     super(app);
+    this.items = [...suggestion];
+    this.setPlaceholder('Type to search IGDB...');
   }
 
-  // Returns all available suggestions.
-  getSuggestions(_query: string): IGDBGameFromSearch[] {
-    return this.suggestion;
+  onOpen() {
+    super.onOpen();
+    // Pre-populate input with the initial query (e.g. Steam game name)
+    // so the user sees what was searched and can refine it
+    if (this.initialQuery) {
+      this.inputEl.value = this.initialQuery;
+      this.inputEl.dispatchEvent(new Event('input'));
+    }
+  }
+
+  // Returns filtered suggestions; also triggers async IGDB re-fetch on new queries.
+  getSuggestions(query: string): IGDBGameFromSearch[] {
+    if (!query) return this.items;
+
+    const q = query.toLowerCase();
+    const clientFiltered = this.items.filter(g => g.name.toLowerCase().includes(q));
+
+    // Debounced IGDB re-fetch so typing a new title loads fresh results
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => this.fetchFromIGDB(query), 400);
+
+    return clientFiltered.length ? clientFiltered : this.items;
+  }
+
+  private async fetchFromIGDB(query: string) {
+    try {
+      const results = await this.api.getByQuery(query);
+      if (results?.length) {
+        this.items = results;
+        // Trigger Obsidian's internal suggestion refresh
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this as any).updateSuggestions?.();
+      }
+    } catch {
+      // silently ignore fetch errors
+    }
   }
 
   // Renders each suggestion item.

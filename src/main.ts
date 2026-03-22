@@ -421,20 +421,25 @@ export default class IGDBGameSearcherPlugin extends Plugin {
     });
   }
 
-  async openGameSuggestModal(games: IGDBGameFromSearch[]): Promise<IGDBGame> {
+  async openGameSuggestModal(games: IGDBGameFromSearch[], initialQuery?: string): Promise<IGDBGame> {
     return new Promise((resolve, reject) => {
-      return new GameSuggestModal(this.app, this.igdbApi, games, (error, selectedGame) => {
-        return error ? reject(error) : resolve(selectedGame);
-      }).open();
+      return new GameSuggestModal(
+        this.app,
+        this.igdbApi,
+        games,
+        (error, selectedGame) => {
+          return error ? reject(error) : resolve(selectedGame);
+        },
+        initialQuery,
+      ).open();
     });
   }
 
   async onSteamSyncMatchFailed(name: string): Promise<IGDBGame | null> {
     try {
       new Notice(`Could not auto-match "${name}" — please search manually`);
-      const results = await this.openIGDBGameSearcherSearchModal(name);
-      if (!results?.length) return null;
-      return await this.openGameSuggestModal(results);
+      const initialResults = await this.igdbApi.getByQuery(name).catch(() => []);
+      return await this.openGameSuggestModal(initialResults, name);
     } catch {
       return null;
     }
