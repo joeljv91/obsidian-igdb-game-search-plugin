@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.4](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.3...0.0.4) (2026-03-22)
+
 ### [0.0.3](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.2...0.0.3) (2026-03-21)
 
 

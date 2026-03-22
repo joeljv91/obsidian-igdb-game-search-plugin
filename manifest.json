@@ -1,7 +1,7 @@
 {
   "id": "igdb-game-searcher",
   "name": "IGDB Game Searcher",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "minAppVersion": "0.15.0",
   "description": "Search for games using IGDB and create notes. Optional Steam Library Sync.",
   "author": "Joel J. forked from CMorooney",
