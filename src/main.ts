@@ -307,17 +307,20 @@ export default class IGDBGameSearcherPlugin extends Plugin {
       );
 
       loadingNotice.setMessage('syncing steam games (wishlist)');
-      progress = new ProgressBarComponent(loadingNotice.noticeEl);
-      await syncSteamWishlist(
-        this.app.vault,
-        this.settings,
-        this.app.fileManager,
-        this.igdbApi,
-        this.steamApi,
-        async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
-        (percent: number) => progress.setValue(50 + (percent * 100) / 2),
-        this.settings.promptOnSteamSyncFailure ? name => this.onSteamSyncMatchFailed(name) : undefined,
-      );
+      if (this.settings.syncWishlist) {
+        progress = new ProgressBarComponent(loadingNotice.noticeEl);
+        await syncSteamWishlist(
+          this.app.vault,
+          this.settings,
+          this.app.fileManager,
+          this.igdbApi,
+          this.steamApi,
+          async (params, openAfterCreate, extraData) =>
+            await this.createNewGameNote(params, openAfterCreate, extraData),
+          (percent: number) => progress.setValue(50 + (percent * 100) / 2),
+          this.settings.promptOnSteamSyncFailure ? name => this.onSteamSyncMatchFailed(name) : undefined,
+        );
+      }
 
       loadingNotice.setMessage('syncing steam achievements');
       await syncAchievements(this.app.vault, this.app.fileManager, this.steamApi, this.settings);

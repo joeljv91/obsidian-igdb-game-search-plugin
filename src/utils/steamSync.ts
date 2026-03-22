@@ -33,7 +33,45 @@ export async function findAndSyncSteamGame(
   logDescription: string,
   onMatchFailed?: (name: string) => Promise<IGDBGame | null>,
 ): Promise<void> {
-  // First try precise lookup by Steam App ID via IGDB external_games
+  // ── Step 0: check if a vault note already carries this steam_id ──────────
+  // This handles games that were previously matched manually (or via any sync).
+  // If found, just update playtime/metadata and return — no IGDB call, no modal.
+  const folderPath = normalizePath(settings.folder);
+  const folder = vault.getFolderByPath(folderPath);
+  if (folder) {
+    for (const f of folder.children) {
+      const file = f as TFile;
+      if (!file || !file.name.endsWith('.md')) continue;
+      let alreadyLinked = false;
+      await new Promise<void>(resolve => {
+        fileManager.processFrontMatter(file, data => {
+          if (data.steam_id != null && Number(data.steam_id) === steamId) {
+            alreadyLinked = true;
+          }
+          resolve();
+          return data;
+        });
+      });
+      if (alreadyLinked) {
+        console.info(
+          '[IGDB Game Searcher][Steam Sync] updating already-linked file: ' + file.name + ' for steam game: ' + name,
+        );
+        await fileManager.processFrontMatter(file, data => {
+          data.steam_playtime_forever = steamPlaytimeForever;
+          data.steam_playtime_2weeks = steamPlaytime2Weeks;
+          if (metadata && metadata instanceof Map) {
+            for (const [key, value] of metadata) {
+              data[key.trim()] = value.trim();
+            }
+          }
+          return data;
+        });
+        return;
+      }
+    }
+  }
+
+  // ── Step 1: try precise IGDB lookup by Steam App ID ──────────────────────
   let igdbGame: Nullable<IGDBGame> = await igdbApi.getByExternalSteamId(steamId).catch(() => null);
 
   // Fall back to fuzzy name search if exact match fails

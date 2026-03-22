@@ -109,8 +109,21 @@ export class SteamAPI {
         url: apiURL.href,
         method: 'GET',
       });
+
+      // The endpoint returns HTML (not JSON) when the wishlist is private or the profile doesn't exist.
+      // Parse text manually so we can give a clear error instead of a cryptic "Unexpected token".
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(res.text);
+      } catch {
+        throw new Error(
+          'Steam wishlist response was not valid JSON. ' +
+            'Make sure your Steam profile and wishlist are set to Public in Steam Privacy Settings.',
+        );
+      }
+
       const m = new Map<number, SteamWishlistedGame>();
-      for (const [k, v] of Object.entries(res.json)) {
+      for (const [k, v] of Object.entries(parsed)) {
         m.set(parseInt(k), v as SteamWishlistedGame);
       }
       return m;

@@ -165,6 +165,7 @@ The **Regen** button in settings (*Advanced/Dangerous*) regenerates frontmatter 
 | Metadata for owned Steam games | Key/value pairs injected into owned game notes |
 | Metadata for wishlisted Steam games | Key/value pairs injected into wishlisted game notes |
 | Sync Steam on start | Sync library + wishlist + achievements when plugin loads |
+| Sync wishlist | Include wishlist in Steam sync (disable if wishlist is private) |
 | Sync playtime on start | Update playtime fields for all Steam-linked notes on load |
 | Try match Steam game on creation | Auto-match a manually created note to your Steam library |
 | Prompt on sync failure | Show a manual search modal when a game can't be auto-matched during sync |

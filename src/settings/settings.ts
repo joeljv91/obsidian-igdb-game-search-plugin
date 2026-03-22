@@ -21,6 +21,7 @@ export interface IGDBGameSearcherSettings {
   tryFindSteamGameOnCreate: boolean;
   metaDataForOwnedSteamGames: Nullable<string>;
   metaDataForWishlistedSteamGames: Nullable<string>;
+  syncWishlist: boolean;
   promptOnSteamSyncFailure: boolean;
 }
 
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
   tryFindSteamGameOnCreate: false,
   metaDataForOwnedSteamGames: null,
   metaDataForWishlistedSteamGames: null,
+  syncWishlist: true,
   promptOnSteamSyncFailure: false,
 };
 
@@ -256,6 +258,19 @@ export class IGDBGameSearcherSettingTab extends PluginSettingTab {
             console.warn(error);
             new Notice('unable to parse metadata for wishlisted steam games');
           }
+        });
+      });
+
+    // Sync wishlist toggle
+    new Setting(containerEl)
+      .setName('Sync wishlist')
+      .setDesc(
+        'Include Steam wishlist during Sync Steam. Disable if your wishlist is private or you do not want it synced.',
+      )
+      .addToggle(toggle => {
+        toggle.setValue(this.plugin.settings.syncWishlist).onChange(async value => {
+          this.plugin.settings.syncWishlist = value;
+          await this.plugin.saveSettings();
         });
       });
 
