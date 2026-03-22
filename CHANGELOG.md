@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.5...0.0.6) (2026-03-22)
+
+
+### Features
+
+* steam achivements + improve suggestion modal ([5488ebc](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/5488ebc439c0d8629ff93fcc0ee53c3220c554d8))
+
 ### [0.0.5](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.4...0.0.5) (2026-03-22)
 
 
