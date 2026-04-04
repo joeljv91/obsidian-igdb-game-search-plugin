@@ -18,6 +18,7 @@ import { IGDBGameSearcherSettingTab, IGDBGameSearcherSettings, DEFAULT_SETTINGS 
 import { replaceVariableSyntax, makeFileName, stringToMap, mapToString } from '@utils/utils';
 import { IGDBAPI } from '@src/apis/igdb_games_api';
 import { SteamAPI } from '@src/apis/steam_api';
+import { RetroAchievementsAPI } from '@src/apis/retroachievements_api';
 import {
   getTemplateContents,
   applyTemplateTransformations,
@@ -25,6 +26,7 @@ import {
   executeInlineScriptsTemplates,
 } from '@utils/template';
 import { syncAchievements, syncSteamWishlist, syncOwnedSteamGames, syncPlaytimes } from '@utils/steamSync';
+import { syncRAGames } from '@utils/raSync';
 
 export type Nullable<T> = T | undefined | null;
 
@@ -32,6 +34,7 @@ export default class IGDBGameSearcherPlugin extends Plugin {
   settings: IGDBGameSearcherSettings;
   igdbApi: IGDBAPI;
   steamApi: Nullable<SteamAPI>;
+  retroAchievementsApi: Nullable<RetroAchievementsAPI>;
 
   async onload() {
     console.info(
@@ -46,6 +49,10 @@ export default class IGDBGameSearcherPlugin extends Plugin {
 
     if (this.settings.syncSteamPlaytimeOnStart) {
       this.syncSteamPlaytime(false);
+    }
+
+    if (this.settings.syncRetroAchievementsOnStart) {
+      this.syncRetroAchievements(false);
     }
 
     // This creates an icon in the left ribbon.
@@ -82,6 +89,12 @@ export default class IGDBGameSearcherPlugin extends Plugin {
       id: 'sync steam achievements',
       name: 'Sync Steam Achievements',
       callback: () => this.syncSteamAchievements(true),
+    });
+
+    this.addCommand({
+      id: 'sync retroachievements',
+      name: 'Sync RetroAchievements',
+      callback: () => this.syncRetroAchievements(true),
     });
 
     // This adds a settings tab so the user can configure various aspects of the plugin
@@ -196,6 +209,10 @@ export default class IGDBGameSearcherPlugin extends Plugin {
                 preservePrevious('steam_playtime_2weeks');
                 preservePrevious('steam_achievements_earned');
                 preservePrevious('steam_achievements');
+                preservePrevious('ra_id');
+                preservePrevious('ra_user_completion_hardcore');
+                preservePrevious('ra_highest_award_kind');
+                preservePrevious('ra_highest_award_date');
 
                 if (this.settings.metaDataForWishlistedSteamGames) {
                   const wishlistMap = stringToMap(this.settings.metaDataForWishlistedSteamGames);
@@ -211,6 +228,16 @@ export default class IGDBGameSearcherPlugin extends Plugin {
                   const ownedMap = stringToMap(this.settings.metaDataForOwnedSteamGames);
                   if (ownedMap instanceof Map) {
                     for (const [key, value] of stringToMap(this.settings.metaDataForOwnedSteamGames)) {
+                      if (existingMetadata.has(key)) {
+                        regeneratedMetadata.set(key, value);
+                      }
+                    }
+                  }
+                }
+                if (this.settings.metaDataForRASyncedGames) {
+                  const raMap = stringToMap(this.settings.metaDataForRASyncedGames);
+                  if (raMap instanceof Map) {
+                    for (const [key, value] of raMap) {
                       if (existingMetadata.has(key)) {
                         regeneratedMetadata.set(key, value);
                       }
@@ -332,6 +359,42 @@ export default class IGDBGameSearcherPlugin extends Plugin {
     }
   }
 
+  async syncRetroAchievements(alertUninitializedApi: boolean): Promise<void> {
+    if (
+      this.retroAchievementsApi === undefined &&
+      this.settings.retroAchievementsWebApiKey &&
+      this.settings.retroAchievementsUsername
+    ) {
+      console.info('[IGDB Game Searcher][RA Sync]: initializing retroachievements api');
+      this.retroAchievementsApi = new RetroAchievementsAPI(
+        this.settings.retroAchievementsWebApiKey,
+        this.settings.retroAchievementsUsername,
+      );
+    }
+
+    if (this.retroAchievementsApi !== undefined) {
+      const loadingNotice = new Notice('syncing retroachievements games', 0);
+      const progress = new ProgressBarComponent(loadingNotice.noticeEl);
+
+      await syncRAGames(
+        this.app.vault,
+        this.settings,
+        this.app.fileManager,
+        this.igdbApi,
+        this.retroAchievementsApi,
+        async (params, openAfterCreate, extraData) => await this.createNewGameNote(params, openAfterCreate, extraData),
+        (percent: number) => progress.setValue(percent * 100),
+        this.settings.promptOnRetroAchievementsSyncFailure ? name => this.onRASyncMatchFailed(name) : undefined,
+      );
+
+      loadingNotice.setMessage('retroachievements sync complete');
+    } else if (alertUninitializedApi) {
+      this.showNotice(
+        'RetroAchievements API not initialized. Did you enter your RetroAchievements username and web API key in plugin settings?',
+      );
+    }
+  }
+
   async parseFileMetadata(file: TFile): Promise<any> {
     const fileManager = this.app.fileManager;
     return new Promise<any>(accept => {
@@ -344,9 +407,13 @@ export default class IGDBGameSearcherPlugin extends Plugin {
   async createNewGameNote(
     params: Nullable<{
       game: Nullable<IGDBGame>;
-      steam_id: Nullable<number>;
-      steam_playtime_forever: number;
-      steam_playtime_2weeks: number;
+      steam_id?: Nullable<number>;
+      steam_playtime_forever?: number;
+      steam_playtime_2weeks?: number;
+      ra_id?: Nullable<number>;
+      ra_user_completion_hardcore?: Nullable<string>;
+      ra_highest_award_kind?: Nullable<string>;
+      ra_highest_award_date?: Nullable<string>;
     }>,
     openAfterCreate = true,
     extraData?: Map<string, string>, // key/values for metadata to add to file
@@ -428,6 +495,21 @@ export default class IGDBGameSearcherPlugin extends Plugin {
         }
       }
 
+      if (params && params.ra_id) {
+        await this.app.fileManager.processFrontMatter(targetFile, (data: any) => {
+          data.ra_id = params.ra_id;
+          data.ra_user_completion_hardcore = params.ra_user_completion_hardcore ?? null;
+          data.ra_highest_award_kind = params.ra_highest_award_kind ?? null;
+          data.ra_highest_award_date = params.ra_highest_award_date ?? null;
+          if (extraData && extraData instanceof Map) {
+            for (const [key, value] of extraData) {
+              data[key] = value;
+            }
+          }
+          return data;
+        });
+      }
+
       // open file
       if (openAfterCreate) {
         await activeLeaf.openFile(targetFile, { state: { mode: 'source' } });
@@ -469,6 +551,16 @@ export default class IGDBGameSearcherPlugin extends Plugin {
   async onSteamSyncMatchFailed(name: string): Promise<IGDBGame | null> {
     try {
       new Notice(`Could not auto-match "${name}" — please search manually`);
+      const initialResults = await this.igdbApi.getByQuery(name).catch(() => []);
+      return await this.openGameSuggestModal(initialResults, name);
+    } catch {
+      return null;
+    }
+  }
+
+  async onRASyncMatchFailed(name: string): Promise<IGDBGame | null> {
+    try {
+      new Notice(`Could not auto-match "${name}" from RetroAchievements. Please search manually`);
       const initialResults = await this.igdbApi.getByQuery(name).catch(() => []);
       return await this.openGameSuggestModal(initialResults, name);
     } catch {

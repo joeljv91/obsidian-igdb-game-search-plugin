@@ -6,6 +6,8 @@
   - [Steam Frontmatter Properties](#steam-frontmatter-properties)
   - [Achievements](#achievements)
   - [Manual Match](#manual-match)
+- [RetroAchievements Sync](#retroachievements-sync)
+  - [RetroAchievements Frontmatter Properties](#retroachievements-frontmatter-properties)
 - [Templating](#templating)
   - [Example Template](#example-template)
   - [Template Variables](#template-variables)
@@ -16,6 +18,7 @@
 ## Description
 
 Search for games by title and automatically create notes with metadata fetched from the [IGDB API](https://api-docs.igdb.com/). Optionally sync your Steam library, wishlist, playtime, and achievements.
+You can also sync your RetroAchievements game progress into the same notes.
 
 ## How to Install
 
@@ -68,6 +71,32 @@ When creating a note manually with *Try match Steam game on creation* enabled, a
 ### Manual Match
 
 Enable **Prompt on sync failure** in settings. When a game can't be auto-matched during sync, a search modal opens so you can pick the correct IGDB entry manually. A **Skip this game** button lets you bypass it and continue the sync.
+
+## RetroAchievements Sync
+
+1. Get your RetroAchievements **Web API Key** from your account settings
+2. Enter your **RetroAchievements Username** and **Web API Key** in plugin settings
+3. (Optional) define metadata key/value pairs to inject into RA-synced notes
+4. Run **Sync RetroAchievements**
+
+The sync flow is similar to Steam:
+- It fetches your full completion list with pagination
+- It enriches each game with per-game progress to store exact hardcore completion percentage
+- It matches to IGDB by name and fuzzy fallback
+- It can prompt you to manually match when auto-match fails
+
+If you prefer, you can enable **Only sync completed RetroAchievements games** to skip partially played titles.
+
+### RetroAchievements Frontmatter Properties
+
+The following snake_case properties are written automatically to RA-synced notes.
+
+| Property | Description |
+|---|---|
+| `ra_id` | RetroAchievements game ID |
+| `ra_user_completion_hardcore` | Hardcore completion percentage (for example `100.00%`) |
+| `ra_highest_award_kind` | Highest award kind (for example `mastered`, `beaten-hardcore`) |
+| `ra_highest_award_date` | ISO date of highest award |
 
 ## Templating
 
@@ -150,6 +179,7 @@ The **Regen** button in settings (*Advanced/Dangerous*) regenerates frontmatter 
 - Note body is preserved; only the `---` block is replaced
 - Looks up IGDB using `id`, `slug`, or `name` frontmatter (falls back to filename)
 - Steam properties (`steam_id`, `steam_playtime_forever`, `steam_playtime_2weeks`, `steam_achievements_earned`, `steam_achievements`) and any custom Steam metadata are preserved
+- RetroAchievements properties (`ra_id`, `ra_user_completion_hardcore`, `ra_highest_award_kind`, `ra_highest_award_date`) and any custom RA metadata are preserved
 
 ## Settings Reference
 
@@ -169,4 +199,10 @@ The **Regen** button in settings (*Advanced/Dangerous*) regenerates frontmatter 
 | Sync playtime on start | Update playtime fields for all Steam-linked notes on load |
 | Try match Steam game on creation | Auto-match a manually created note to your Steam library |
 | Prompt on sync failure | Show a manual search modal when a game can't be auto-matched during sync |
+| RetroAchievements Web API Key | Web API key used for RetroAchievements sync |
+| RetroAchievements Username | Username (or ULID) used for RetroAchievements sync |
+| Metadata for RetroAchievements synced games | Key/value pairs injected into RA-synced game notes |
+| Sync RetroAchievements on start | Sync RetroAchievements games when plugin loads |
+| Only sync completed RetroAchievements games | Restrict RA sync to completed games only |
+| Prompt to manually match RA games on sync failure | Show manual game search if RA game cannot be auto-matched |
 

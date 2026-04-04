@@ -23,6 +23,12 @@ export interface IGDBGameSearcherSettings {
   metaDataForWishlistedSteamGames: Nullable<string>;
   syncWishlist: boolean;
   promptOnSteamSyncFailure: boolean;
+  retroAchievementsWebApiKey: Nullable<string>;
+  retroAchievementsUsername: Nullable<string>;
+  syncRetroAchievementsOnStart: boolean;
+  promptOnRetroAchievementsSyncFailure: boolean;
+  metaDataForRASyncedGames: Nullable<string>;
+  onlySyncCompletedRAGames: boolean;
 }
 
 export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
@@ -40,6 +46,12 @@ export const DEFAULT_SETTINGS: IGDBGameSearcherSettings = {
   metaDataForWishlistedSteamGames: null,
   syncWishlist: true,
   promptOnSteamSyncFailure: false,
+  retroAchievementsWebApiKey: null,
+  retroAchievementsUsername: null,
+  syncRetroAchievementsOnStart: false,
+  promptOnRetroAchievementsSyncFailure: false,
+  metaDataForRASyncedGames: null,
+  onlySyncCompletedRAGames: false,
 };
 
 export class IGDBGameSearcherSettingTab extends PluginSettingTab {
@@ -335,6 +347,94 @@ export class IGDBGameSearcherSettingTab extends PluginSettingTab {
         const prevValue = this.plugin.settings.promptOnSteamSyncFailure;
         toggle.setValue(prevValue).onChange(async value => {
           this.plugin.settings.promptOnSteamSyncFailure = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    createHeader(containerEl, 'RetroAchievements Settings');
+
+    new Setting(containerEl)
+      .setName('RetroAchievements Web API Key')
+      .setDesc('Your RetroAchievements web API key from your account settings.')
+      .addTextArea(textArea => {
+        const prevValue = this.plugin.settings.retroAchievementsWebApiKey;
+        textArea.setValue(prevValue).onChange(async value => {
+          this.plugin.settings.retroAchievementsWebApiKey = value;
+          this.plugin.retroAchievementsApi = undefined;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('RetroAchievements Username')
+      .setDesc('Your RetroAchievements username (or ULID).')
+      .addTextArea(textArea => {
+        const prevValue = this.plugin.settings.retroAchievementsUsername;
+        textArea.setValue(prevValue).onChange(async value => {
+          this.plugin.settings.retroAchievementsUsername = value;
+          this.plugin.retroAchievementsApi = undefined;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    const metadataForRAGamesDescription = document.createDocumentFragment();
+    metadataForRAGamesDescription.createDiv({ text: 'automatically add metadata to retroachievements-synced games' });
+    metadataForRAGamesDescription.createDiv({
+      text: 'enter each metadata key/value on a single line separated by a single colon, e.g.',
+    });
+    metadataForRAGamesDescription.createDiv({ text: 'owned:true' });
+    metadataForRAGamesDescription.createDiv({ text: 'owned_platform:retroachievements' });
+    new Setting(containerEl)
+      .setName('Metadata for RetroAchievements synced games')
+      .setDesc(metadataForRAGamesDescription)
+      .addTextArea(textArea => {
+        const prevValue = this.plugin.settings.metaDataForRASyncedGames;
+        textArea.setValue(prevValue).onChange(async value => {
+          try {
+            const newValue = stringToMap(value);
+            if (newValue.size > 0) {
+              this.plugin.settings.metaDataForRASyncedGames = mapToString(newValue);
+            } else {
+              this.plugin.settings.metaDataForRASyncedGames = null;
+            }
+            await this.plugin.saveSettings();
+          } catch (error) {
+            console.warn(error);
+            new Notice('unable to parse metadata for retroachievements synced games');
+          }
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Sync RetroAchievements on start')
+      .setDesc('Sync RetroAchievements games when the plugin loads.')
+      .addToggle(toggle => {
+        toggle.setValue(this.plugin.settings.syncRetroAchievementsOnStart).onChange(async value => {
+          this.plugin.settings.syncRetroAchievementsOnStart = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Only sync completed RetroAchievements games')
+      .setDesc(
+        'When enabled, only games considered completed (for example mastered/completed/beaten) are added or updated during RetroAchievements sync.',
+      )
+      .addToggle(toggle => {
+        toggle.setValue(this.plugin.settings.onlySyncCompletedRAGames).onChange(async value => {
+          this.plugin.settings.onlySyncCompletedRAGames = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName('Prompt to manually match RA games on sync failure')
+      .setDesc(
+        'When automatic IGDB matching fails during RetroAchievements sync, open a search modal to manually choose the correct game.',
+      )
+      .addToggle(toggle => {
+        toggle.setValue(this.plugin.settings.promptOnRetroAchievementsSyncFailure).onChange(async value => {
+          this.plugin.settings.promptOnRetroAchievementsSyncFailure = value;
           await this.plugin.saveSettings();
         });
       });
