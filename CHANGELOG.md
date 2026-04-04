@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.1.0...0.1.1) (2026-04-04)
+
+
+### Features
+
+* integrate retroachivements ([0d4229f](https://github.com/jjimenez22991/obsidian-game-search-plugin/commit/0d4229f6686db9177036a596193615fa3b82db92))
+
 ## [0.1.0](https://github.com/jjimenez22991/obsidian-game-search-plugin/compare/0.0.7...0.1.0) (2026-04-04)
 
 
